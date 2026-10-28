@@ -11,7 +11,7 @@ CREATE TABLE categoria (
     id_categoria INT AUTO_INCREMENT PRIMARY KEY,
     nome         VARCHAR(60)  NOT NULL,
     descricao    VARCHAR(200) NULL,
-    CONSTRAINT uq_categoria_nome UNIQUE (nome)
+    UNIQUE (nome)
 ) ENGINE=InnoDB;
 
 CREATE TABLE cliente (
@@ -22,11 +22,8 @@ CREATE TABLE cliente (
     telefone      VARCHAR(20)  NULL,
     data_cadastro DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ativo         TINYINT(1)   NOT NULL DEFAULT 1,
-    CONSTRAINT uq_cliente_email UNIQUE (email),
-    CONSTRAINT uq_cliente_cpf   UNIQUE (cpf),
-    CONSTRAINT ck_cliente_email CHECK (email LIKE '%_@_%._%'),
-    CONSTRAINT ck_cliente_cpf   CHECK (cpf REGEXP '^[0-9]{11}$'),
-    CONSTRAINT ck_cliente_ativo CHECK (ativo IN (0, 1))
+    UNIQUE (email),
+    UNIQUE (cpf)
 ) ENGINE=InnoDB;
 
 CREATE TABLE endereco (
@@ -39,10 +36,7 @@ CREATE TABLE endereco (
     uf          CHAR(2)      NOT NULL,
     cep         CHAR(8)      NOT NULL,
     principal   TINYINT(1)   NOT NULL DEFAULT 1,
-    CONSTRAINT ck_endereco_cep       CHECK (cep REGEXP '^[0-9]{8}$'),
-    CONSTRAINT ck_endereco_principal CHECK (principal IN (0, 1)),
-    CONSTRAINT fk_endereco_cliente FOREIGN KEY (id_cliente)
-        REFERENCES cliente (id_cliente) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (id_cliente) REFERENCES cliente (id_cliente)
 ) ENGINE=InnoDB;
 
 CREATE TABLE produto (
@@ -53,11 +47,7 @@ CREATE TABLE produto (
     preco        DECIMAL(10,2) NOT NULL,
     estoque      INT           NOT NULL DEFAULT 0,
     ativo        TINYINT(1)    NOT NULL DEFAULT 1,
-    CONSTRAINT ck_produto_preco   CHECK (preco > 0),
-    CONSTRAINT ck_produto_estoque CHECK (estoque >= 0),
-    CONSTRAINT ck_produto_ativo   CHECK (ativo IN (0, 1)),
-    CONSTRAINT fk_produto_categoria FOREIGN KEY (id_categoria)
-        REFERENCES categoria (id_categoria) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (id_categoria) REFERENCES categoria (id_categoria)
 ) ENGINE=InnoDB;
 
 CREATE TABLE pedido (
@@ -67,13 +57,8 @@ CREATE TABLE pedido (
     data_pedido DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status      ENUM('PENDENTE','PAGO','ENVIADO','ENTREGUE','CANCELADO') NOT NULL DEFAULT 'PENDENTE',
     valor_frete DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    CONSTRAINT ck_pedido_frete CHECK (valor_frete >= 0),
-    INDEX idx_pedido_data   (data_pedido),
-    INDEX idx_pedido_status (status),
-    CONSTRAINT fk_pedido_cliente  FOREIGN KEY (id_cliente)
-        REFERENCES cliente (id_cliente)   ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pedido_endereco FOREIGN KEY (id_endereco)
-        REFERENCES endereco (id_endereco) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (id_cliente) REFERENCES cliente (id_cliente),
+    FOREIGN KEY (id_endereco) REFERENCES endereco (id_endereco)
 ) ENGINE=InnoDB;
 
 CREATE TABLE item_pedido (
@@ -82,20 +67,16 @@ CREATE TABLE item_pedido (
     id_produto     INT           NOT NULL,
     quantidade     INT           NOT NULL,
     preco_unitario DECIMAL(10,2) NOT NULL,
-    CONSTRAINT uq_item            UNIQUE (id_pedido, id_produto),
-    CONSTRAINT ck_item_quantidade CHECK (quantidade > 0),
-    CONSTRAINT ck_item_preco      CHECK (preco_unitario > 0),
-    CONSTRAINT fk_item_pedido  FOREIGN KEY (id_pedido)
-        REFERENCES pedido (id_pedido)   ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_item_produto FOREIGN KEY (id_produto)
-        REFERENCES produto (id_produto) ON DELETE RESTRICT ON UPDATE CASCADE
+    UNIQUE (id_pedido, id_produto),
+    FOREIGN KEY (id_pedido) REFERENCES pedido (id_pedido),
+    FOREIGN KEY (id_produto) REFERENCES produto (id_produto)
 ) ENGINE=InnoDB;
 
 CREATE TABLE forma_pagamento (
     id_forma_pagamento INT AUTO_INCREMENT PRIMARY KEY,
     nome               VARCHAR(30)  NOT NULL,
     descricao          VARCHAR(100) NULL,
-    CONSTRAINT uq_forma_pagamento_nome UNIQUE (nome)
+    UNIQUE (nome)
 ) ENGINE=InnoDB;
 
 CREATE TABLE pagamento (
@@ -105,14 +86,9 @@ CREATE TABLE pagamento (
     valor              DECIMAL(10,2) NOT NULL,
     data_pagamento     DATETIME      NULL,
     status_pagamento   ENUM('PENDENTE','APROVADO','RECUSADO','ESTORNADO') NOT NULL DEFAULT 'PENDENTE',
-    CONSTRAINT uq_pagamento_pedido UNIQUE (id_pedido),
-    CONSTRAINT ck_pagamento_valor  CHECK (valor > 0),
-    CONSTRAINT ck_pagamento_aprovado_data
-        CHECK (status_pagamento <> 'APROVADO' OR data_pagamento IS NOT NULL),
-    CONSTRAINT fk_pagamento_pedido FOREIGN KEY (id_pedido)
-        REFERENCES pedido (id_pedido) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pagamento_forma  FOREIGN KEY (id_forma_pagamento)
-        REFERENCES forma_pagamento (id_forma_pagamento) ON DELETE RESTRICT ON UPDATE CASCADE
+    UNIQUE (id_pedido),
+    FOREIGN KEY (id_pedido) REFERENCES pedido (id_pedido),
+    FOREIGN KEY (id_forma_pagamento) REFERENCES forma_pagamento (id_forma_pagamento)
 ) ENGINE=InnoDB;
 
 CREATE TABLE avaliacao (
@@ -122,12 +98,9 @@ CREATE TABLE avaliacao (
     nota           TINYINT      NOT NULL,
     comentario     VARCHAR(255) NULL,
     data_avaliacao DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_avaliacao      UNIQUE (id_cliente, id_produto),
-    CONSTRAINT ck_avaliacao_nota CHECK (nota BETWEEN 1 AND 5),
-    CONSTRAINT fk_avaliacao_cliente FOREIGN KEY (id_cliente)
-        REFERENCES cliente (id_cliente) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_avaliacao_produto FOREIGN KEY (id_produto)
-        REFERENCES produto (id_produto) ON DELETE RESTRICT ON UPDATE CASCADE
+    UNIQUE (id_cliente, id_produto),
+    FOREIGN KEY (id_cliente) REFERENCES cliente (id_cliente),
+    FOREIGN KEY (id_produto) REFERENCES produto (id_produto)
 ) ENGINE=InnoDB;
 
 -- Insere os dados de exemplo.
